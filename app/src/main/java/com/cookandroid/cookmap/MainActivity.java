@@ -1,0 +1,41 @@
+package com.cookandroid.cookmap;
+
+import androidx.appcompat.app.AppCompatActivity;
+
+import android.os.Bundle;
+import android.view.Menu;
+
+import com.google.android.gms.maps.MapFragment;
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.model.GroundOverlayOptions;
+import com.google.android.gms.maps.model.LatLng;
+
+public class MainActivity extends AppCompatActivity implements OnMapReadyCallback {
+    GoogleMap gMap;
+    MapFragment mapFrag;
+    GroundOverlayOptions videoMark;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+        setTitle("구글지도 활용");
+
+        mapFrag = (MapFragment) getFragmentManager().findFragmentById(R.id.map);
+        mapFrag.getMapAsync(this);
+
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    @Override
+    public void onMapReady(GoogleMap map) {
+        gMap = map;
+        gMap.setMapType(GoogleMap.MAP_TYPE_SATELLITE);
+        gMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(37.568256, 126.897240), 13));
+    }
+}
