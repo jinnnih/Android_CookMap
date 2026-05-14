@@ -1,108 +1,91 @@
 package com.cookandroid.cookmap;
 
 import android.os.Bundle;
-import androidx.appcompat.app.AppCompatActivity;
+import android.view.Menu;
+import android.view.MenuItem;
 
-import android.view.View;
-import android.widget.Button;
-import android.widget.Toast;
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
+import com.google.android.gms.maps.model.GroundOverlay;
 import com.google.android.gms.maps.model.GroundOverlayOptions;
 import com.google.android.gms.maps.model.LatLng;
 
-import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.util.ArrayList;
-import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements OnMapReadyCallback {
     GoogleMap gMap;
     SupportMapFragment mapFrag;
-    GroundOverlayOptions placeMark;
-    Button btnPrev, btnNext;
-    List<String> lines = new ArrayList<>();
-    int placeCount = 0;
+    GroundOverlayOptions videoMark;
+    ArrayList<GroundOverlay> CCTVList = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        setTitle("경기도 으뜸 맛집");
+        setTitle("연습문제 7");
+
         mapFrag = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
         mapFrag.getMapAsync(this);
-
-        btnPrev = (Button) findViewById(R.id.btnPrev);
-        btnNext = (Button) findViewById(R.id.btnNext);
-
-        readCSV();
-
-        btnNext.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                String line = lines.get(placeCount++);
-                if (placeCount > lines.size() - 1)
-                    placeCount = 0;
-                String[] tokens = line.split(",");
-                double lat = Double.parseDouble(tokens[0]);
-                double lon = Double.parseDouble(tokens[1]);
-                String restName = tokens[2];
-
-                LatLng point = new LatLng(lat, lon);
-                gMap.moveCamera(CameraUpdateFactory.newLatLngZoom(point, 13));
-                placeMark = new GroundOverlayOptions()
-                        .image(BitmapDescriptorFactory.fromResource(R.drawable.food))
-                        .position(point, 500f, 500f);
-                gMap.addGroundOverlay(placeMark);
-                Toast.makeText(getApplicationContext(), restName, Toast.LENGTH_LONG).show();
-            }
-        });
-
-        btnPrev.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                String line = lines.get(placeCount--);
-                if (placeCount < 0)
-                    placeCount = lines.size() - 1;
-                String[] tokens = line.split(",");
-                double lat = Double.parseDouble(tokens[0]);
-                double lon = Double.parseDouble(tokens[1]);
-                String restName = tokens[2];
-
-                LatLng point = new LatLng(lat, lon);
-                gMap.moveCamera(CameraUpdateFactory.newLatLngZoom(point, 13));
-                placeMark = new GroundOverlayOptions()
-                        .image(BitmapDescriptorFactory.fromResource(R.drawable.food))
-                        .position(point, 500f, 500f);
-                gMap.addGroundOverlay(placeMark);
-                Toast.makeText(getApplicationContext(), restName, Toast.LENGTH_LONG).show();
-            }
-        });
     }
 
     @Override
     public void onMapReady(GoogleMap map) {
         gMap = map;
-        gMap.setMapType(GoogleMap.MAP_TYPE_NORMAL);
+        gMap.setMapType(GoogleMap.MAP_TYPE_SATELLITE);
         gMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(37.568256, 126.897240), 13));
         gMap.getUiSettings().setZoomControlsEnabled(true);
+        gMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
+            @Override
+            public void onMapClick(@NonNull LatLng point) {
+                videoMark = new GroundOverlayOptions()
+                        .image(BitmapDescriptorFactory.fromResource(R.drawable.presence_video_busy))
+                        .position(point, 100f, 100f);
+
+                GroundOverlay overlay = gMap.addGroundOverlay(videoMark);
+                CCTVList.add(overlay);
+            }
+        });
     }
 
-    public void readCSV() {
-        InputStream inputStream = getResources().openRawResource(R.raw.good_place);
-        BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
-        try {
-            String line;
-            line = reader.readLine(); // 첫 제목행을 읽어서 버림
-            while ((line = reader.readLine()) != null) {
-                lines.add(line);
-            }
-            reader.close();
-        } catch (Exception e) {}
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        super.onCreateOptionsMenu(menu);
+        menu.add(0, 1, 0, "위성 지도");
+        menu.add(0, 2, 0, "일반 지도");
+        menu.add(0, 3, 0, "바로전 CCTV 지우기");
+        menu.add(0, 4, 0, "모든 CCTV 지우기");
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        switch (item.getItemId()) {
+            case 1:
+                gMap.setMapType(GoogleMap.MAP_TYPE_HYBRID);
+                return true;
+            case 2:
+                gMap.setMapType(GoogleMap.MAP_TYPE_NORMAL);
+                return true;
+            case 3:
+                if (!CCTVList.isEmpty()) {
+                    GroundOverlay last = CCTVList.get(CCTVList.size() - 1);
+                    last.remove();
+                    CCTVList.remove(CCTVList.size() - 1);
+                }
+                return true;
+            case 4:
+                for (GroundOverlay overlay : CCTVList) {
+                    overlay.remove();
+                }
+                CCTVList.clear();
+                return true;
+        }
+        return false;
     }
 }
